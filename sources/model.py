@@ -291,15 +291,27 @@ class ParcelTimeSeriesClassifier(nn.Module):
         # Convert to float32 to match model parameters
         x_pixel_data = x_pixel_data.float()
 
-        # Process each time step through PSE
-        embeddings_over_time = []
-        for t in range(T):
-            x_s_t = x_pixel_data[:, :, t, :]  # (B, S, C)
-            e_t = self.pixel_set_encoder(x_s_t, mask)  # (B, d_e)
-            embeddings_over_time.append(e_t)
+        # A more efficient implementation for model.py in ParcelTimeSeriesClassifier.forward()
 
-        # Stack to create sequence
-        e_sequence = torch.stack(embeddings_over_time, dim=1)  # (B, T, d_e)
+        B, S, T, C = x_pixel_data.shape
+
+        # 1. Reshape the input to combine batch and time dimensions
+        # (B, S, T, C) -> (B, T, S, C) -> (B * T, S, C)
+        x_reshaped = x_pixel_data.permute(0, 2, 1, 3).reshape(B * T, S, C)
+
+        # 2. Expand the mask to match the new reshaped input
+        mask_reshaped = None
+        if mask is not None:
+            # The mask is the same for all time steps of a parcel.
+            # We expand it from (B, S) to (B * T, S).
+            mask_reshaped = mask.unsqueeze(1).expand(-1, T, -1).reshape(B * T, S)
+
+        # 3. Apply the PixelSetEncoder only ONCE on the large batch
+        e_reshaped = self.pixel_set_encoder(x_reshaped, mask_reshaped)  # Shape: (B * T, d_e)
+
+        # 4. Reshape the output back to the desired sequence format
+        # (B * T, d_e) -> (B, T, d_e)
+        e_sequence = e_reshaped.view(B, T, -1)
 
         # Process sequence through Transformer with CLS token
         cls_token_features = self.temporal_transformer_encoder(e_sequence)  # (B, transformer_d_model)
