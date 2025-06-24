@@ -34,7 +34,7 @@ MAX_PIXEL_VALUE = 10000
 #training Hyperparameters
 LEARNING_RATE = 1e-3
 BATCH_SIZE = 128
-NUM_EPOCHS = 3
+NUM_EPOCHS = 25
 
 #crosvalidation setup
 NUM_FOLDS = 5
@@ -148,7 +148,7 @@ for fold_idx, (train_indices, val_indices) in enumerate(kfold.split(all_parcel_i
     )
     val_loader = torch.utils.data.DataLoader(
         val_dataset,
-        batch_size=8, #padding adds a lot of ram ussage
+        batch_size=32, #padding adds a lot of ram ussage
         shuffle=False,
         num_workers=2,
         pin_memory=True,

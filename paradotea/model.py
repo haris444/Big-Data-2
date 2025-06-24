@@ -48,7 +48,7 @@ class PixelSetEncoder(nn.Module):
         mlp2_layers = []
         for i in range(len(mlp2_dims) - 1):
             mlp2_layers.append(nn.Linear(mlp2_dims[i], mlp2_dims[i + 1]))
-            if i < len(mlp2_dims) - 2:  # No BatchNorm/ReLU on final layer
+            if i < len(mlp2_dims) - 2:  #no BatchNorm/ReLU on final layer
                 mlp2_layers.append(nn.BatchNorm1d(mlp2_dims[i + 1]))
                 mlp2_layers.append(nn.ReLU())
         self.mlp2 = nn.Sequential(*mlp2_layers)
